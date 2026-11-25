@@ -1,0 +1,589 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "0b3e432a-bd90-4e4b-b44b-a41ccac3e83e",
+  "prevId": "65a34a56-e8e6-4d92-a076-f8cd35022ac8",
+  "tables": {
+    "app_state": {
+      "name": "app_state",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "document": {
+          "name": "document",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "canjes": {
+      "name": "canjes",
+      "columns": {
+        "tarjeta_id": {
+          "name": "tarjeta_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ciclo": {
+          "name": "ciclo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "premio_id": {
+          "name": "premio_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "canjeado_en": {
+          "name": "canjeado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "canjes_tarjeta_id_ciclo_premio_id_premios_tarjeta_tarjeta_id_ciclo_premio_id_fk": {
+          "name": "canjes_tarjeta_id_ciclo_premio_id_premios_tarjeta_tarjeta_id_ciclo_premio_id_fk",
+          "tableFrom": "canjes",
+          "tableTo": "premios_tarjeta",
+          "columnsFrom": [
+            "tarjeta_id",
+            "ciclo",
+            "premio_id"
+          ],
+          "columnsTo": [
+            "tarjeta_id",
+            "ciclo",
+            "premio_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "canjes_tarjeta_id_ciclo_premio_id_pk": {
+          "columns": [
+            "tarjeta_id",
+            "ciclo",
+            "premio_id"
+          ],
+          "name": "canjes_tarjeta_id_ciclo_premio_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "clientes": {
+      "name": "clientes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "comercio_id": {
+          "name": "comercio_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "consentimiento": {
+          "name": "consentimiento",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "consentimiento_en": {
+          "name": "consentimiento_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "clientes_comercio_email_unico": {
+          "name": "clientes_comercio_email_unico",
+          "columns": [
+            "comercio_id",
+            "email"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "clientes_comercio_id_comercios_id_fk": {
+          "name": "clientes_comercio_id_comercios_id_fk",
+          "tableFrom": "clientes",
+          "tableTo": "comercios",
+          "columnsFrom": [
+            "comercio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "clientes_consentimiento_booleano": {
+          "name": "clientes_consentimiento_booleano",
+          "value": "\"clientes\".\"consentimiento\" IN (0, 1)"
+        }
+      }
+    },
+    "comercios": {
+      "name": "comercios",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ciudad": {
+          "name": "ciudad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rubro": {
+          "name": "rubro",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "dueno": {
+          "name": "dueno",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "activo": {
+          "name": "activo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_sellos": {
+          "name": "total_sellos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "diseno_tarjeta": {
+          "name": "diseno_tarjeta",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "diseno_cartel": {
+          "name": "diseno_cartel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "comercios_activo_booleano": {
+          "name": "comercios_activo_booleano",
+          "value": "\"comercios\".\"activo\" IN (0, 1)"
+        },
+        "comercios_total_sellos_valido": {
+          "name": "comercios_total_sellos_valido",
+          "value": "\"comercios\".\"total_sellos\" BETWEEN 1 AND 50"
+        }
+      }
+    },
+    "premios": {
+      "name": "premios",
+      "columns": {
+        "comercio_id": {
+          "name": "comercio_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sellos_requeridos": {
+          "name": "sellos_requeridos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "premios_comercio_id_comercios_id_fk": {
+          "name": "premios_comercio_id_comercios_id_fk",
+          "tableFrom": "premios",
+          "tableTo": "comercios",
+          "columnsFrom": [
+            "comercio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "premios_comercio_id_id_pk": {
+          "columns": [
+            "comercio_id",
+            "id"
+          ],
+          "name": "premios_comercio_id_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "premios_sellos_validos": {
+          "name": "premios_sellos_validos",
+          "value": "\"premios\".\"sellos_requeridos\" BETWEEN 1 AND 50"
+        }
+      }
+    },
+    "premios_tarjeta": {
+      "name": "premios_tarjeta",
+      "columns": {
+        "tarjeta_id": {
+          "name": "tarjeta_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ciclo": {
+          "name": "ciclo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "premio_id": {
+          "name": "premio_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "orden": {
+          "name": "orden",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sellos_requeridos": {
+          "name": "sellos_requeridos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "descripcion": {
+          "name": "descripcion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "premios_tarjeta_tarjeta_id_tarjetas_cliente_id_fk": {
+          "name": "premios_tarjeta_tarjeta_id_tarjetas_cliente_id_fk",
+          "tableFrom": "premios_tarjeta",
+          "tableTo": "tarjetas",
+          "columnsFrom": [
+            "tarjeta_id"
+          ],
+          "columnsTo": [
+            "cliente_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "premios_tarjeta_tarjeta_id_ciclo_premio_id_pk": {
+          "columns": [
+            "tarjeta_id",
+            "ciclo",
+            "premio_id"
+          ],
+          "name": "premios_tarjeta_tarjeta_id_ciclo_premio_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "premios_tarjeta_ciclo_positivo": {
+          "name": "premios_tarjeta_ciclo_positivo",
+          "value": "\"premios_tarjeta\".\"ciclo\" >= 1"
+        },
+        "premios_tarjeta_sellos_validos": {
+          "name": "premios_tarjeta_sellos_validos",
+          "value": "\"premios_tarjeta\".\"sellos_requeridos\" BETWEEN 1 AND 50"
+        }
+      }
+    },
+    "sellos": {
+      "name": "sellos",
+      "columns": {
+        "tarjeta_id": {
+          "name": "tarjeta_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ciclo": {
+          "name": "ciclo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "numero": {
+          "name": "numero",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sellos_tarjeta_id_tarjetas_cliente_id_fk": {
+          "name": "sellos_tarjeta_id_tarjetas_cliente_id_fk",
+          "tableFrom": "sellos",
+          "tableTo": "tarjetas",
+          "columnsFrom": [
+            "tarjeta_id"
+          ],
+          "columnsTo": [
+            "cliente_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "sellos_tarjeta_id_ciclo_numero_pk": {
+          "columns": [
+            "tarjeta_id",
+            "ciclo",
+            "numero"
+          ],
+          "name": "sellos_tarjeta_id_ciclo_numero_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "sellos_ciclo_positivo": {
+          "name": "sellos_ciclo_positivo",
+          "value": "\"sellos\".\"ciclo\" >= 1"
+        },
+        "sellos_numero_valido": {
+          "name": "sellos_numero_valido",
+          "value": "\"sellos\".\"numero\" BETWEEN 1 AND 50"
+        }
+      }
+    },
+    "tarjetas": {
+      "name": "tarjetas",
+      "columns": {
+        "cliente_id": {
+          "name": "cliente_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ciclo": {
+          "name": "ciclo",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "total_sellos": {
+          "name": "total_sellos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "visitas_total": {
+          "name": "visitas_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tarjetas_cliente_id_clientes_id_fk": {
+          "name": "tarjetas_cliente_id_clientes_id_fk",
+          "tableFrom": "tarjetas",
+          "tableTo": "clientes",
+          "columnsFrom": [
+            "cliente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tarjetas_ciclo_positivo": {
+          "name": "tarjetas_ciclo_positivo",
+          "value": "\"tarjetas\".\"ciclo\" >= 1"
+        },
+        "tarjetas_total_sellos_valido": {
+          "name": "tarjetas_total_sellos_valido",
+          "value": "\"tarjetas\".\"total_sellos\" BETWEEN 1 AND 50"
+        },
+        "tarjetas_visitas_no_negativas": {
+          "name": "tarjetas_visitas_no_negativas",
+          "value": "\"tarjetas\".\"visitas_total\" >= 0"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

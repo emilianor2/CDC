@@ -1,0 +1,34 @@
+name: club-de-fans
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      CLUB_DOCKER_PREVIEW: "1"
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - local-db:/app/.wrangler/state
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - package.json
+            - package-lock.json
+            - compose.yaml
+            - docker/
+            - drizzle/
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: package-lock.json
+        - action: rebuild
+          path: docker
+        - action: rebuild
+          path: drizzle
+
+volumes:
+  local-db:

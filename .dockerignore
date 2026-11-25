@@ -1,0 +1,15 @@
+.git
+.next
+.vinext
+.wrangler
+.sites-runtime
+dist
+node_modules
+outputs
+.env*
+.dev.vars*
+*.pem
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
