@@ -40,6 +40,10 @@ que contiene `compose.yaml`.
   archivos propios. La API se implementa en `lib/backend.mjs`. El esquema está
   en `db/schema.ts` y las migraciones están en `drizzle/`.
 
+Para que los QR de Docker funcionen también desde otro dispositivo en tu red,
+configurá `CLUB_ENROLLMENT_ORIGIN` con la dirección accesible desde ese dispositivo,
+como `http://192.168.1.20:5173`. Esta opción se usa solo en la vista local de Docker.
+
 ## Base relacional
 
 | Tabla | Clave primaria | Clave foránea |
