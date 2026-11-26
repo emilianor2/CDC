@@ -85,7 +85,8 @@ Configurá también `SUPERADMIN_RECOVERY_KEY` como secreto aleatorio independien
 de al menos 32 caracteres para crear o recuperar la contraseña. Ese flujo exige
 además la identidad autorizada del proveedor y el código TOTP. Usá un ingreso
 que verifique y sanee las cabeceras de identidad de ChatGPT, tal como hace
-el router de Sites. La contraseña nueva debe tener al menos 15 caracteres.
+el router de Sites. La contraseña nueva debe tener al menos 8 caracteres,
+incluidos una letra mayúscula y un número.
 
 ## Base técnica
 
