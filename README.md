@@ -116,19 +116,14 @@ docker compose exec app node --test db/relational-migration.test.mjs lib/backend
 
 ## Acceso de superadmin en producción
 
-La compilación de producción exige contraseña y un código TOTP de seis dígitos.
-Configurá `SUPERADMIN_EMAILS` como lista JSON de correos autorizados y
-`SUPERADMIN_TOTP_SECRETS` como secreto del entorno. Debe contener un objeto JSON
-que asigna a cada correo una semilla Base32 personal de 32 caracteres, generada
-con 20 bytes aleatorios. El autenticador usa SHA-1, seis dígitos y períodos de
-30 segundos. El panel rechaza volver a usar un código que ya aceptó.
-
-Configurá también `SUPERADMIN_RECOVERY_KEY` como secreto aleatorio independiente
-de al menos 32 caracteres para crear o recuperar la contraseña. Ese flujo exige
-además la identidad autorizada del proveedor y el código TOTP. Usá un ingreso
-que verifique y sanee las cabeceras de identidad de ChatGPT, tal como hace
-el router de Sites. La contraseña nueva debe tener al menos 8 caracteres,
-incluidos una letra mayúscula y un número.
+En el Worker standalone de Cloudflare, configurá `SUPERADMIN_EMAILS` como lista
+JSON de correos autorizados y `SUPERADMIN_RECOVERY_KEY` como secreto aleatorio
+independiente de al menos 32 caracteres. La clave de recuperación se usa solo
+para crear o restablecer la contraseña. El modo temporal `password-only`
+permite iniciar sesión con correo y contraseña. El modo predeterminado es
+`required`, que pide TOTP también en el alta y la recuperación. La
+contraseña debe tener entre 8 y 128 caracteres, con una letra mayúscula y
+un número. Se guarda como hash con sal en D1.
 
 ## Base técnica
 

@@ -1,8 +1,8 @@
 # Producción en Cloudflare
 
-El dominio `clubdefans.ar` permanece registrado en DonWeb. Agregá el dominio
+El dominio `clubdefans.ar` está registrado en NIC Argentina. Agregá el dominio
 al plan Free de Cloudflare, revisá los registros DNS importados (incluidos
-los del correo, si lo usás) y cambiá los servidores DNS en DonWeb a los dos
+los del correo, si lo usás) y cambiá la delegación en NIC.ar a los dos
 que Cloudflare asigne. Esperá a que la zona figure activa. El registro web
 existente debe tener el proxy de Cloudflare activado para que la Worker Route
 reciba las visitas; no borres registros DNS para publicar.
@@ -23,14 +23,19 @@ reciba las visitas; no borres registros DNS para publicar.
    El flujo ejecuta las pruebas, guarda la compilación por commit,
    aplica las migraciones, publica el Worker y comprueba el dominio.
    Los pull requests pasan por las pruebas y la compilación.
-4. En los secretos del Worker `club-de-fans`, configurá
-   `SUPERADMIN_EMAILS`, `SUPERADMIN_TOTP_SECRETS` y
-   `SUPERADMIN_RECOVERY_KEY` según los formatos del README. Después abrí
+4. En el Worker `club-de-fans`, configurá `SUPERADMIN_EMAILS` como lista JSON
+   de correos autorizados y `SUPERADMIN_RECOVERY_KEY` como secreto aleatorio
+   de al menos 32 caracteres. Después abrí
    `https://clubdefans.ar/admin/setup?panel=superadmin&password=setup` y
-   creá la contraseña con el correo permitido, un código TOTP y la clave de
-   recuperación. Este formulario no depende de Cloudflare Access. El panel
-   habitual usa correo, contraseña y TOTP. Los dueños usan las credenciales
-   que les crea el superadmin.
+   creá la contraseña con el correo permitido y la clave de recuperación.
+   En el modo temporal `password-only`, el acceso diario requiere correo y
+   contraseña. El valor se configura en la variable de entorno de GitHub
+   `SUPERADMIN_TOTP_MODE` en `production`. Para reactivar TOTP, primero
+   configurá el secreto del Worker `SUPERADMIN_TOTP_SECRETS` como un objeto
+   JSON desde el correo autorizado a su semilla Base32 de 32 caracteres.
+   Después, poné la variable en `required` y ejecutá el workflow desde
+   `main`. Así, tanto el ingreso como la recuperación piden TOTP.
+   Los dueños usan las credenciales que les crea el superadmin.
 
 La base de producción comienza con los datos de ejemplo. Si necesitás migrar
 datos de otra instancia, exportalos e importalos por separado. Para activar

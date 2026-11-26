@@ -83,6 +83,7 @@ jobs:
       - name: Preparar configuración de producción
         env:
           CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+          SUPERADMIN_TOTP_MODE: ${{ vars.SUPERADMIN_TOTP_MODE }}
         run: node scripts/prepare-cloudflare.mjs
       - name: Aplicar migraciones y publicar
         env:
@@ -94,10 +95,12 @@ jobs:
           npx --no-install wrangler d1 migrations apply DB --remote --config dist-release/dist/server/wrangler.json
           npx --no-install wrangler deploy --config dist-release/dist/server/wrangler.json
       - name: Verificar el sitio publicado
+        env:
+          SUPERADMIN_TOTP_MODE: ${{ vars.SUPERADMIN_TOTP_MODE }}
         run: |
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --max-time 15 \
             'https://clubdefans.ar/api/state?panel=superadmin' --output /tmp/club-state.json
-          node --input-type=module -e 'import {readFileSync} from "node:fs"; const state = JSON.parse(readFileSync("/tmp/club-state.json")); if (state.status !== "admin-login" || !state.adminTotpRequired || !state.standaloneAuth) process.exit(1)'
+          node --input-type=module -e 'import {readFileSync} from "node:fs"; const state = JSON.parse(readFileSync("/tmp/club-state.json")); if (state.status !== "admin-login" || state.adminTotpRequired !== (process.env.SUPERADMIN_TOTP_MODE !== "password-only") || !state.standaloneAuth) process.exit(1)'
           curl --fail --silent --show-error --max-time 15 \
             'https://clubdefans.ar/admin/setup/api' --output /tmp/club-setup.json
-          node --input-type=module -e 'import {readFileSync} from "node:fs"; const setup = JSON.parse(readFileSync("/tmp/club-setup.json")); if (setup.status !== "admin-password" || !setup.setupNeedsEmail || !setup.adminTotpRequired) process.exit(1)'
+          node --input-type=module -e 'import {readFileSync} from "node:fs"; const setup = JSON.parse(readFileSync("/tmp/club-setup.json")); if (setup.status !== "admin-password" || !setup.setupNeedsEmail || setup.adminTotpRequired !== (process.env.SUPERADMIN_TOTP_MODE !== "password-only")) process.exit(1)'
