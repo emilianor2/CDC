@@ -66,7 +66,7 @@ export default defineConfig(async ({ command }) => {
           ...(command === "serve"
             ? {
                 ...(dockerPreview
-                  ? { vars: { BOOTSTRAP_OWNER_EMAIL: "seedy@sites.test" } }
+                  ? { vars: { BOOTSTRAP_OWNER_EMAIL: "seedy@sites.test", CLUB_DOCKER_PREVIEW: "1" } }
                   : {}),
                 services: [
                   {
