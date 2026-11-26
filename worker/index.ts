@@ -3,14 +3,12 @@ import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 import { standaloneRequest } from "./standalone-auth.mjs";
 
-type WorkerContext = ExecutionContext<{ CONNECTORS?: ConnectorBinding }> & {
-  access?: { aud: string; getIdentity(): Promise<{ email?: string } | null> };
-};
+type WorkerContext = ExecutionContext<{ CONNECTORS?: ConnectorBinding }>;
 
 const worker = {
   async fetch(request: Request, env: Cloudflare.Env, ctx: WorkerContext) {
     if (env.CLUB_STANDALONE === "1") {
-      const result = await standaloneRequest(request, ctx.access, env.CLUB_ACCESS_AUD);
+      const result = await standaloneRequest(request);
       if (result instanceof Response) return result;
       request = result;
     }

@@ -57,7 +57,7 @@ jobs:
   deploy:
     name: Publicar en Cloudflare
     needs: verify
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.CLOUDFLARE_DEPLOY_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -83,7 +83,6 @@ jobs:
       - name: Preparar configuración de producción
         env:
           CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
-          CLOUDFLARE_ACCESS_AUD: ${{ vars.CLOUDFLARE_ACCESS_AUD }}
         run: node scripts/prepare-cloudflare.mjs
       - name: Aplicar migraciones y publicar
         env:
@@ -99,5 +98,6 @@ jobs:
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --max-time 15 \
             'https://clubdefans.ar/api/state?panel=superadmin' --output /tmp/club-state.json
           node --input-type=module -e 'import {readFileSync} from "node:fs"; const state = JSON.parse(readFileSync("/tmp/club-state.json")); if (state.status !== "admin-login" || !state.adminTotpRequired || !state.standaloneAuth) process.exit(1)'
-          status=$(curl --silent --show-error --max-time 15 --output /dev/null --write-out '%{http_code}' 'https://clubdefans.ar/admin/setup/api')
-          [[ "$status" == 302 || "$status" == 303 || "$status" == 403 ]]
+          curl --fail --silent --show-error --max-time 15 \
+            'https://clubdefans.ar/admin/setup/api' --output /tmp/club-setup.json
+          node --input-type=module -e 'import {readFileSync} from "node:fs"; const setup = JSON.parse(readFileSync("/tmp/club-setup.json")); if (setup.status !== "admin-password" || !setup.setupNeedsEmail || !setup.adminTotpRequired) process.exit(1)'
