@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { configureToolEnvironment } from "./scripts/tool-environment.mjs";
-import { sites } from "./scripts/vite/sites-vite-plugin";
+import { defaultLocalEmail, sites } from "./scripts/vite/sites-vite-plugin";
 import { connectorPreview } from "./scripts/vite/connector-preview-plugin.mjs";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
@@ -40,6 +40,8 @@ const localBindingConfig = {
 export default defineConfig(async ({ command }) => {
   configureToolEnvironment(process.cwd());
   const dockerPreview = command === "serve" && process.env.CLUB_DOCKER_PREVIEW === "1";
+  const localEmail = (dockerPreview && process.env.CLUB_LOCAL_ADMIN_EMAIL?.trim().toLowerCase())
+    || defaultLocalEmail;
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
@@ -56,7 +58,7 @@ export default defineConfig(async ({ command }) => {
     },
     plugins: [
       vinext(),
-      sites({ mockAuth: !managedLinux, dockerPreview }),
+      sites({ mockAuth: !managedLinux, dockerPreview, localEmail }),
       connectorPreview(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
@@ -66,7 +68,7 @@ export default defineConfig(async ({ command }) => {
           ...(command === "serve"
             ? {
                 ...(dockerPreview
-                  ? { vars: { BOOTSTRAP_OWNER_EMAIL: "seedy@sites.test", CLUB_DOCKER_PREVIEW: "1" } }
+                  ? { vars: { BOOTSTRAP_OWNER_EMAIL: localEmail, CLUB_DOCKER_PREVIEW: "1" } }
                   : {}),
                 services: [
                   {

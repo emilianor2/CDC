@@ -29,7 +29,9 @@ que contiene `compose.yaml`.
 - Abrí [Café Central (cliente)](http://localhost:5173/?join=central) para probar la inscripción y la tarjeta.
 - Para probar el panel, abrí [Superadmin](http://localhost:5173/?panel=superadmin)
   y elegí **Crear o restablecer mi contraseña**. El entorno simula la cuenta
-  `seedy@sites.test`. Creá una contraseña de prueba para esta copia local.
+  `seedy@sites.test` de forma predeterminada. Para usar otro correo, definí
+  `CLUB_LOCAL_ADMIN_EMAIL` en el archivo local `.env` y volvé a levantar Docker.
+  Creá una contraseña de prueba para esta copia local.
 - El primer arranque aplica las migraciones de `drizzle/` a D1 local (SQLite).
   Al cargar la aplicación se crean cinco comercios de ejemplo. El volumen
   `local-db` conserva los datos entre reinicios de Docker. Cada computadora
@@ -43,6 +45,42 @@ que contiene `compose.yaml`.
 Para que los QR de Docker funcionen también desde otro dispositivo en tu red,
 configurá `CLUB_ENROLLMENT_ORIGIN` con la dirección accesible desde ese dispositivo,
 como `http://192.168.1.20:5173`. Esta opción se usa solo en la vista local de Docker.
+
+## Perfiles y permisos
+
+Los tres perfiles usan la misma aplicación. Cada comercio tiene un enlace de
+inscripción para clientes y un acceso al panel de su dueño.
+
+| Perfil | Entrada | Alcance y acciones |
+| --- | --- | --- |
+| Cliente | Enlace o QR del comercio, por ejemplo `/?join=central` | Se inscribe y consulta su propia tarjeta, sellos y premios. Puede inscribirse en varios comercios con el mismo correo. Cada comercio guarda una inscripción y una tarjeta independientes. El personal del comercio registra los sellos y canjes. |
+| Dueño | Panel de dueño, por ejemplo `/?panel=owner&local=central&login=1` | Gestiona el comercio para el que fue aprobado. Puede ver y eliminar clientes de ese comercio, consultar la actividad, registrar o corregir sellos, canjear premios, iniciar ciclos y configurar el programa. También puede enviar avisos cuando Web Push está configurado. Un comercio puede tener varios dueños aprobados. Cada cuenta de dueño tiene acceso a un comercio. |
+| Superadmin | `/?panel=superadmin` | Tiene alcance global. Puede crear, pausar o eliminar comercios, gestionar los accesos de dueños y editar diseños de tarjetas y carteles. Puede consultar el panel de un comercio en modo de solo lectura. Las operaciones de sellos y canjes requieren una cuenta de dueño aprobada para ese comercio. |
+
+El servidor aplica los permisos y valida el comercio en cada operación.
+El enlace de inscripción es público. La billetera web recupera las tarjetas
+con la sesión del navegador.
+
+## Tarjeta móvil y notificaciones
+
+La billetera web agrupa las tarjetas del cliente. Tiene un manifiesto con
+iconos y modo independiente, y ofrece activar avisos desde la tarjeta.
+
+1. **App web instalable (PWA).** Probá la instalación y el acceso a las
+   tarjetas desde un origen HTTPS en iPhone y Android.
+   [Requisitos de instalación en Chrome](https://web.dev/articles/install-criteria).
+2. **Notificaciones Web Push.** Para habilitar los envíos, configurá
+   `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` en el servidor.
+   En iPhone y iPad, Web Push está disponible para apps agregadas a la
+   pantalla de inicio desde iOS y iPadOS 16.4.
+   [Requisitos de Web Push en iOS y iPadOS](https://webkit.org/blog/13878/).
+3. **Apple Wallet y Google Wallet.** Emitir un pase por tarjeta existente,
+   vinculado al registro de `tarjetas`, y actualizar su progreso cuando
+   cambien los sellos o los canjes. Apple requiere un certificado de firma
+   asociado a un Pass Type ID. Google permite probar con una cuenta emisora
+   en modo demo y pide autorización para la distribución general.
+   [Apple Wallet](https://developer.apple.com/wallet/get-started/)
+   · [Google Wallet](https://developers.google.com/wallet/retail/loyalty-cards/test-and-go-live/request-publishing-access).
 
 ## Base relacional
 

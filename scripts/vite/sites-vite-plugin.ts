@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import type { Plugin } from "vite";
 
 const localUserId = "local_seedy";
-const localEmail = "seedy@sites.test";
+export const defaultLocalEmail = "seedy@sites.test";
 const localFullName = "Seedy";
 const localCookieName = "__sites_local_auth";
 const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -29,7 +29,11 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-export function sites({ mockAuth = true, dockerPreview = false } = {}): Plugin {
+export function sites({
+  mockAuth = true,
+  dockerPreview = false,
+  localEmail = defaultLocalEmail,
+} = {}): Plugin {
   let root = process.cwd();
   let command: "build" | "serve" = "build";
 
