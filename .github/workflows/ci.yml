@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verify:
@@ -53,3 +53,51 @@ jobs:
             drizzle/*.sql
           if-no-files-found: error
           retention-days: 30
+
+  deploy:
+    name: Publicar en Cloudflare
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.CLOUDFLARE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://clubdefans.ar
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Configurar Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar Wrangler desde el lockfile
+        run: npm ci --include=dev --include=optional
+      - name: Descargar la versión validada
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: club-de-fans-${{ github.sha }}
+          path: dist-release
+      - name: Preparar configuración de producción
+        env:
+          CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+          CLOUDFLARE_ACCESS_AUD: ${{ vars.CLOUDFLARE_ACCESS_AUD }}
+        run: node scripts/prepare-cloudflare.mjs
+      - name: Aplicar migraciones y publicar
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          : "${CLOUDFLARE_ACCOUNT_ID:?Falta configurar CLOUDFLARE_ACCOUNT_ID}"
+          : "${CLOUDFLARE_API_TOKEN:?Falta el secreto CLOUDFLARE_API_TOKEN}"
+          npx --no-install wrangler d1 migrations apply DB --remote --config dist-release/dist/server/wrangler.json
+          npx --no-install wrangler deploy --config dist-release/dist/server/wrangler.json
+      - name: Verificar el sitio publicado
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --max-time 15 \
+            'https://clubdefans.ar/api/state?panel=superadmin' --output /tmp/club-state.json
+          node --input-type=module -e 'import {readFileSync} from "node:fs"; const state = JSON.parse(readFileSync("/tmp/club-state.json")); if (state.status !== "admin-login" || !state.adminTotpRequired || !state.standaloneAuth) process.exit(1)'
+          status=$(curl --silent --show-error --max-time 15 --output /dev/null --write-out '%{http_code}' 'https://clubdefans.ar/admin/setup/api')
+          [[ "$status" == 302 || "$status" == 303 || "$status" == 403 ]]

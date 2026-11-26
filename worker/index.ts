@@ -1,9 +1,19 @@
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
+import { standaloneRequest } from "./standalone-auth.mjs";
+
+type WorkerContext = ExecutionContext<{ CONNECTORS?: ConnectorBinding }> & {
+  access?: { aud: string; getIdentity(): Promise<{ email?: string } | null> };
+};
 
 const worker = {
-  fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+  async fetch(request: Request, env: Cloudflare.Env, ctx: WorkerContext) {
+    if (env.CLUB_STANDALONE === "1") {
+      const result = await standaloneRequest(request, ctx.access, env.CLUB_ACCESS_AUD);
+      if (result instanceof Response) return result;
+      request = result;
+    }
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.
