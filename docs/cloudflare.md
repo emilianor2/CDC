@@ -3,7 +3,9 @@
 El dominio `clubdefans.ar` permanece registrado en DonWeb. Agregá el dominio
 al plan Free de Cloudflare, revisá los registros DNS importados (incluidos
 los del correo, si lo usás) y cambiá los servidores DNS en DonWeb a los dos
-que Cloudflare asigne. Esperá a que la zona figure activa.
+que Cloudflare asigne. Esperá a que la zona figure activa. El registro web
+existente debe tener el proxy de Cloudflare activado para que la Worker Route
+reciba las visitas; no borres registros DNS para publicar.
 [Configuración del dominio](https://developers.cloudflare.com/fundamentals/manage-domains/add-site/).
 
 ## Preparar la primera publicación

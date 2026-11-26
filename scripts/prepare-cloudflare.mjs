@@ -21,7 +21,7 @@ config.name = 'club-de-fans';
 config.topLevelName = config.name;
 config.workers_dev = false;
 config.preview_urls = false;
-config.routes = [{ pattern: 'clubdefans.ar', custom_domain: true }];
+config.routes = [{ pattern: 'clubdefans.ar/*', zone_name: 'clubdefans.ar' }];
 config.keep_vars = true;
 config.vars = { ...config.vars, CLUB_STANDALONE: '1' };
 
