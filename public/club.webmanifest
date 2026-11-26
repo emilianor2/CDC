@@ -1,0 +1,7 @@
+{
+  "name": "Club de Fans",
+  "short_name": "Club de Fans",
+  "display": "standalone",
+  "scope": "/",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

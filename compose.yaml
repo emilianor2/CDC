@@ -19,6 +19,9 @@ services:
             - package.json
             - package-lock.json
             - compose.yaml
+            - compose.override.yaml
+            - .dev.vars*
+            - .env*
             - docker/
             - drizzle/
         - action: rebuild
