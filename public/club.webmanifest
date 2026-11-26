@@ -3,5 +3,5 @@
   "short_name": "Club de Fans",
   "display": "standalone",
   "scope": "/",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "icons": [{ "src": "/club-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }]
 }
