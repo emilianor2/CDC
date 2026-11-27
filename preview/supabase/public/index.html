@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Club de Fans · Prueba de acceso</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p>Club de Fans</p>
+      <h1>Prueba de acceso</h1>
+    </header>
+    <form id="login">
+      <label>Correo<input name="email" type="email" required autocomplete="username"></label>
+      <label>Contraseña<input name="password" type="password" required autocomplete="current-password"></label>
+      <button type="submit">Entrar</button>
+    </form>
+    <p id="status" role="status"></p>
+    <section id="panel" hidden aria-labelledby="role">
+      <div class="panel-heading">
+        <h2 id="role"></h2>
+        <button id="logout" type="button">Cerrar sesión</button>
+      </div>
+      <div id="cards"></div>
+    </section>
+  </main>
+</body>
+</html>

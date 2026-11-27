@@ -1,0 +1,87 @@
+name: Club de Fans · Supabase preview
+
+on:
+  push:
+    branches: [codex/supabase-preview]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: club-de-fans-supabase-preview
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/codex/supabase-preview'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Probar login y permisos con Supabase local
+        run: |
+          npx --yes supabase@3.4.0 start --workdir preview/supabase -x imgproxy,studio,edge-runtime,logflare,vector,storage-api,realtime,supavisor,postgres-meta >/dev/null
+          config="$(npx --yes supabase@3.4.0 status --workdir preview/supabase -o json)"
+          export SUPABASE_URL="$(jq -er .API_URL <<<"$config")"
+          export SUPABASE_PUBLISHABLE_KEY="$(jq -er .PUBLISHABLE_KEY <<<"$config")"
+          export SUPABASE_ADMIN_KEY="$(jq -er .SECRET_KEY <<<"$config")"
+          node preview/supabase/verify.mjs
+      - name: Validar los scripts de la vista previa
+        run: |
+          node --check preview/supabase/worker.mjs
+          node --check preview/supabase/public/app.js
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/codex/supabase-preview' && vars.ENABLE_SUPABASE_PREVIEW == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: supabase-preview
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Preparar dependencias
+        run: npm ci --include=dev --include=optional
+      - name: Migrar y probar el proyecto Supabase de prueba
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_ADMIN_KEY: ${{ secrets.SUPABASE_ADMIN_KEY }}
+          SUPABASE_DEMO_PASSWORDS: ${{ secrets.SUPABASE_DEMO_PASSWORDS }}
+        run: |
+          node --input-type=module -e '
+            const { SUPABASE_URL, SUPABASE_DB_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ADMIN_KEY, SUPABASE_DEMO_PASSWORDS } = process.env;
+            const project = /^https:\/\/([a-z0-9]+)\.supabase\.co$/.exec(SUPABASE_URL)?.[1];
+            if (!project || !SUPABASE_PUBLISHABLE_KEY?.startsWith("sb_publishable_")
+                || !SUPABASE_ADMIN_KEY?.startsWith("sb_secret_") || !SUPABASE_DEMO_PASSWORDS)
+              throw new Error("Faltan los datos del proyecto de prueba");
+            let db;
+            try { db = new URL(SUPABASE_DB_URL); } catch { throw new Error("Falta la conexión de prueba"); }
+            if (db.protocol !== "postgresql:" || !(db.hostname === "db." + project + ".supabase.co"
+                || (db.hostname.endsWith(".pooler.supabase.com") && db.username === "postgres." + project)))
+              throw new Error("La conexión PostgreSQL debe pertenecer al proyecto de prueba indicado");'
+          npx --yes supabase@3.4.0 db push --workdir preview/supabase --db-url "$SUPABASE_DB_URL" --yes
+          node preview/supabase/verify.mjs --hosted
+      - name: Publicar el Worker de prueba
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          : "${CLOUDFLARE_ACCOUNT_ID:?Falta configurar CLOUDFLARE_ACCOUNT_ID}"
+          : "${CLOUDFLARE_API_TOKEN:?Falta el token de Cloudflare para la vista previa}"
+          npx --no-install wrangler deploy --config preview/supabase/wrangler.jsonc \
+            --var "SUPABASE_URL:$SUPABASE_URL" --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY"
