@@ -1,7 +1,7 @@
 {
   "name": "club-de-fans-supabase-preview",
   "main": "worker.mjs",
-  "compatibility_date": "2026-11-26",
+  "compatibility_date": "2026-05-01",
   "workers_dev": true,
   "preview_urls": false,
   "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": ["/config"] }
