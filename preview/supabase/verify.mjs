@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
+import { demoState } from './demo-state.mjs';
 
 const {
   SUPABASE_URL: endpoint,
@@ -73,7 +74,7 @@ for (const role of roles) {
     login = await signIn();
   }
   const session = success(login, 'Iniciar sesión como ' + role);
-  users[role] = { id: session.user.id, token: session.access_token };
+  users[role] = { id: session.user.id, email: session.user.email, token: session.access_token };
 }
 
 await upsert('perfiles', roles.map(rol => ({ rol, usuario_id: users[rol].id })));
@@ -94,6 +95,10 @@ await upsert('premios', [
   { id: 'premio-norte', comercio_id: 'cafe-norte', descripcion: 'Café gratis', sellos_requeridos: 5 },
   { id: 'premio-sur', comercio_id: 'cafe-sur', descripcion: 'Medialuna', sellos_requeridos: 3 },
 ]);
+success(await request('/rest/v1/club_preview_state', {
+  method: 'POST', body: { id: 'demo', document: demoState(users) },
+  prefer: 'resolution=ignore-duplicates,return=minimal',
+}), 'Inicializar los paneles originales');
 
 const as = (role, table, options = {}) => request('/rest/v1/' + table, {
   key: publicKey, token: users[role].token, ...options,
@@ -124,6 +129,9 @@ const escalation = await as('cliente', `perfiles?usuario_id=eq.${users.cliente.i
 });
 assert.equal(escalation.response?.code, '42501');
 assert.equal((await request('/rest/v1/tarjetas', { key: publicKey })).ok, false);
+for (const role of roles) {
+  assert.equal((await as(role, 'club_preview_state?select=document')).ok, false);
+}
 
 for (const [role, card] of [['dueno', 'cliente-norte'], ['superadmin', 'cliente-sur']]) {
   const [created] = success(await stamp(role, card), 'Agregar sello como ' + role);

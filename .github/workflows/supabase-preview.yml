@@ -24,6 +24,12 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '24'
+          cache: npm
+      - name: Preparar dependencias y pantallas originales
+        run: |
+          npm ci --include=dev --include=optional
+          node preview/supabase/build-assets.mjs
+          node --test db/relational-migration.test.mjs lib/*.test.mjs
       - name: Probar login y permisos con Supabase local
         run: |
           npx --yes supabase@3.4.0 start --workdir preview/supabase -x imgproxy,studio,edge-runtime,logflare,vector,storage-api,realtime,supavisor,postgres-meta >/dev/null
@@ -32,10 +38,17 @@ jobs:
           export SUPABASE_PUBLISHABLE_KEY="$(jq -er .PUBLISHABLE_KEY <<<"$config")"
           export SUPABASE_ADMIN_KEY="$(jq -er .SECRET_KEY <<<"$config")"
           node preview/supabase/verify.mjs
-      - name: Validar los scripts de la vista previa
-        run: |
-          node --check preview/supabase/worker.mjs
-          node --check preview/supabase/public/app.js
+          umask 077
+          settings="$(mktemp)"
+          trap 'rm -f "$settings"; if [[ -n "${worker_pid:-}" ]]; then kill "$worker_pid" 2>/dev/null || true; fi' EXIT
+          printf 'SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_ADMIN_KEY=%s\n' \
+            "$SUPABASE_URL" "$SUPABASE_PUBLISHABLE_KEY" "$SUPABASE_ADMIN_KEY" > "$settings"
+          node node_modules/wrangler/bin/wrangler.js dev --config preview/supabase/wrangler.jsonc \
+            --ip 127.0.0.1 --port 8787 --inspector-port 0 --env-file "$settings" &
+          worker_pid=$!
+          curl --fail --silent --show-error --retry 15 --retry-delay 1 --retry-all-errors \
+            --max-time 5 http://127.0.0.1:8787/ --output /dev/null
+          CHECK_DEMO_MUTATION=true node preview/supabase/smoke.mjs
 
   deploy:
     needs: verify
@@ -52,7 +65,9 @@ jobs:
           node-version: '24'
           cache: npm
       - name: Preparar dependencias
-        run: npm ci --include=dev --include=optional
+        run: |
+          npm ci --include=dev --include=optional
+          node preview/supabase/build-assets.mjs
       - name: Migrar y probar el proyecto Supabase de prueba
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
@@ -80,8 +95,22 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_ADMIN_KEY: ${{ secrets.SUPABASE_ADMIN_KEY }}
         run: |
           : "${CLOUDFLARE_ACCOUNT_ID:?Falta configurar CLOUDFLARE_ACCOUNT_ID}"
           : "${CLOUDFLARE_API_TOKEN:?Falta el token de Cloudflare para la vista previa}"
+          umask 077
+          secrets="$(mktemp --suffix=.json)"
+          trap 'rm -f "$secrets"' EXIT
+          node -e 'console.log(JSON.stringify({ SUPABASE_ADMIN_KEY: process.env.SUPABASE_ADMIN_KEY }))' > "$secrets"
           npx --no-install wrangler deploy --config preview/supabase/wrangler.jsonc \
+            --secrets-file "$secrets" \
             --var "SUPABASE_URL:$SUPABASE_URL" --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY"
+      - name: Verificar las pantallas publicadas
+        env:
+          PREVIEW_BASE_URL: https://club-de-fans-supabase-preview.emilianor92.workers.dev
+          SUPABASE_DEMO_PASSWORDS: ${{ secrets.SUPABASE_DEMO_PASSWORDS }}
+        run: |
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors \
+            --max-time 10 "$PREVIEW_BASE_URL/" --output /dev/null
+          node preview/supabase/smoke.mjs

@@ -11,6 +11,8 @@ try {
 
     npx --yes supabase@3.4.0 start --workdir preview/supabase --network-id $networkName -x imgproxy,studio,edge-runtime,logflare,vector,storage-api,realtime,supavisor,postgres-meta | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar Supabase.' }
+    npx --yes supabase@3.4.0 migration up --workdir preview/supabase | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudieron aplicar las migraciones locales.' }
     $config = npx --yes supabase@3.4.0 status --workdir preview/supabase -o json 2>$null | ConvertFrom-Json
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo leer la configuración local.' }
 
@@ -24,9 +26,21 @@ try {
         Remove-Item Env:SUPABASE_ADMIN_KEY
     }
 
-    Write-Host 'Las contraseñas locales están en preview/supabase/.env.demo.json.'
-    npx --no-install wrangler dev --config preview/supabase/wrangler.jsonc --ip 127.0.0.1 --port 8787 --inspector-port 0 --var "SUPABASE_URL:$($config.API_URL)" --var "SUPABASE_PUBLISHABLE_KEY:$($config.PUBLISHABLE_KEY)"
-    if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar la web de prueba.' }
+    node preview/supabase/build-assets.mjs
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudieron compilar los paneles de prueba.' }
+    $settingsPath = Join-Path $PSScriptRoot '.env.wrangler-local'
+    try {
+        @(
+            "SUPABASE_URL=$($config.API_URL)"
+            "SUPABASE_PUBLISHABLE_KEY=$($config.PUBLISHABLE_KEY)"
+            "SUPABASE_ADMIN_KEY=$($config.SECRET_KEY)"
+        ) | Set-Content -LiteralPath $settingsPath
+        Write-Host 'Las contraseñas locales están en preview/supabase/.env.demo.json.'
+        npx --no-install wrangler dev --config preview/supabase/wrangler.jsonc --ip 127.0.0.1 --port 8787 --inspector-port 0 --env-file $settingsPath
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar la web de prueba.' }
+    } finally {
+        Remove-Item -LiteralPath $settingsPath -ErrorAction SilentlyContinue
+    }
 } finally {
     Pop-Location
 }

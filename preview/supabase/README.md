@@ -1,6 +1,10 @@
 # Prueba de login con Supabase
 
-La rama sirve una pantalla de prueba con un Worker independiente. Los dos comercios, clientes, tarjetas y premios son ficticios. El esquema cubre login, permisos de lectura y alta de sellos. La migración de datos reales y las pantallas completas de Club de Fans quedan fuera de esta prueba.
+La rama sirve los paneles originales de cliente, dueño y superadmin con un Worker independiente y login de Supabase. Las tres cuentas, los dos comercios y las tarjetas son ficticios.
+
+Los paneles comparten un estado de prueba persistente en PostgreSQL. El Worker valida la sesión y usa las reglas del backend de Club de Fans para limitar los datos y las operaciones de cada perfil. La tabla del estado queda reservada al servidor. Las tablas relacionales de la primera prueba se conservan para los tests de políticas de Supabase.
+
+Las cuentas se crean desde el Action. El panel de superadmin puede crear comercios y administrar los accesos de prueba existentes. La creación de nuevas cuentas desde el panel y el envío real de notificaciones están fuera de esta prueba.
 
 ## Docker local
 
