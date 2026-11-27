@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { Script } from 'node:vm';
 import { setTimeout as delay } from 'node:timers/promises';
+import { generateKeyPairSync, randomBytes } from 'node:crypto';
 
 const base = process.env.PREVIEW_BASE_URL || 'http://127.0.0.1:8787';
 const checkFixtures = process.env.CHECK_DEMO_MUTATION === 'true';
@@ -21,13 +22,18 @@ function request(path, options = {}) {
 async function checkLoginPage() {
   for (let attempt = 0; attempt < 15; attempt++) {
     const page = await request('/').catch(() => null);
-    if (page?.ok && page.headers.get('referrer-policy') === 'same-origin'
-        && /action="\/login"/.test(await page.text())) return;
+    if (page?.ok && page.headers.get('referrer-policy') === 'same-origin') {
+      const html = await page.text();
+      if (html.includes('action="/login"') && html.includes('rel="manifest"')) return;
+    }
     await delay(2000);
   }
   assert.fail('La versión esperada del formulario todavía no se sirve en Cloudflare.');
 }
 await checkLoginPage();
+const manifest = await request('/club.webmanifest');
+assert.equal(manifest.status, 200);
+assert.equal((await manifest.json()).display, 'standalone');
 assert.equal((await request('/api/state?panel=superadmin', { headers: {
   'oai-authenticated-user-email': 'superadmin@demo.clubdefans.test',
 } })).status, 401);
@@ -59,6 +65,8 @@ for (const [role, destination, marker, stores, clients] of accounts) {
   assert.equal(state.status, 200);
   const account = await state.json();
   assert.equal(account.status, 'ready');
+  if (role === 'cliente') assert.match(account.pushPublicKey, /^B[A-Za-z0-9_-]{86}$/);
+  if (role === 'dueno') assert.equal(account.pushEnabled, true);
   visibleStores[role] = account.data.cafes.map(store => store.id).sort();
   if (checkFixtures) {
     assert.deepEqual(visibleStores[role], [...stores].sort());
@@ -88,6 +96,25 @@ if (visibleStores.superadmin.includes('cafe-sur')) {
   assert.equal((await delegated.json()).readOnly, true);
 }
 if (checkFixtures) {
+  const { x, y } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' }).publicKey.export({ format: 'jwk' });
+  const subscription = {
+    endpoint: 'https://web.push.apple.com/ci-test',
+    keys: {
+      p256dh: Buffer.concat([Buffer.from([4]), Buffer.from(x, 'base64url'), Buffer.from(y, 'base64url')]).toString('base64url'),
+      auth: randomBytes(16).toString('base64url'),
+    },
+  };
+  const subscriptionRequest = (role, local, check) => request('/api/push-subscription', {
+    method: 'POST', headers: { Cookie: sessions[role], Origin: base, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ local, subscription, check }),
+  });
+  assert.equal((await subscriptionRequest('dueno', 'cafe-norte', false)).status, 403);
+  assert.equal((await subscriptionRequest('cliente', 'cafe-sur', false)).status, 403);
+  assert.equal((await subscriptionRequest('cliente', 'cafe-norte', false)).status, 200);
+  assert.equal((await (await subscriptionRequest('cliente', 'cafe-norte', true)).json()).enabled, true);
+  const owner = await request('/api/state?panel=owner', { headers: { Cookie: sessions.dueno } });
+  assert.equal((await owner.json()).data.clients.find(client => client.id === 'cliente-norte').pushReady, true);
+
   const before = await request('/api/state?join=cafe-norte', { headers: { Cookie: sessions.cliente } });
   const original = (await before.json()).data.clients[0].stamps;
   const key = randomUUID();

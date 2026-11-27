@@ -14,7 +14,10 @@ const app = page
   .replace('<script></script>', () => '<script>' + scripts.concat(preview).join('\n') + '</script>');
 
 await cp(new URL('../../public/', import.meta.url), destination, { recursive: true });
+const manifest = JSON.parse(await readFile(new URL('club.webmanifest', destination), 'utf8'));
+Object.assign(manifest, { id: '/', start_url: '/', name: 'Club de Fans · Prueba', short_name: 'Club de Fans' });
 await Promise.all([
+  writeFile(new URL('club.webmanifest', destination), JSON.stringify(manifest)),
   writeFile(new URL('app.html', destination), app),
   writeFile(new URL('login.html', destination), login.replace('<style></style>', () => '<style>' + styles + '</style>')),
 ]);

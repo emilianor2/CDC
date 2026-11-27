@@ -43,6 +43,8 @@ jobs:
           trap 'rm -f "$settings"; if [[ -n "${worker_pid:-}" ]]; then kill "$worker_pid" 2>/dev/null || true; fi' EXIT
           printf 'SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_ADMIN_KEY=%s\n' \
             "$SUPABASE_URL" "$SUPABASE_PUBLISHABLE_KEY" "$SUPABASE_ADMIN_KEY" > "$settings"
+          node preview/supabase/generate-vapid.mjs | jq -r 'to_entries[] | "\(.key)=\(.value)"' >> "$settings"
+          printf 'VAPID_SUBJECT=https://club-de-fans-supabase-preview.emilianor92.workers.dev\n' >> "$settings"
           node node_modules/wrangler/bin/wrangler.js dev --config preview/supabase/wrangler.jsonc \
             --ip 127.0.0.1 --port 8787 --inspector-port 0 --env-file "$settings" &
           worker_pid=$!
@@ -96,13 +98,25 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_ADMIN_KEY: ${{ secrets.SUPABASE_ADMIN_KEY }}
+          PREVIEW_VAPID: ${{ secrets.PREVIEW_VAPID }}
         run: |
           : "${CLOUDFLARE_ACCOUNT_ID:?Falta configurar CLOUDFLARE_ACCOUNT_ID}"
           : "${CLOUDFLARE_API_TOKEN:?Falta el token de Cloudflare para la vista previa}"
           umask 077
           secrets="$(mktemp --suffix=.json)"
           trap 'rm -f "$secrets"' EXIT
-          node -e 'console.log(JSON.stringify({ SUPABASE_ADMIN_KEY: process.env.SUPABASE_ADMIN_KEY }))' > "$secrets"
+          node -e '
+            let vapid;
+            try { vapid = JSON.parse(process.env.PREVIEW_VAPID); } catch { throw new Error("Falta el secreto PREVIEW_VAPID"); }
+            if (!/^B[A-Za-z0-9_-]{86}$/.test(vapid?.VAPID_PUBLIC_KEY) || !/^[A-Za-z0-9_-]{43}$/.test(vapid?.VAPID_PRIVATE_KEY)) {
+              throw new Error("PREVIEW_VAPID tiene un formato inválido");
+            }
+            console.log(JSON.stringify({
+              SUPABASE_ADMIN_KEY: process.env.SUPABASE_ADMIN_KEY,
+              VAPID_PUBLIC_KEY: vapid.VAPID_PUBLIC_KEY,
+              VAPID_PRIVATE_KEY: vapid.VAPID_PRIVATE_KEY,
+              VAPID_SUBJECT: "https://club-de-fans-supabase-preview.emilianor92.workers.dev",
+            }));' > "$secrets"
           npx --no-install wrangler deploy --config preview/supabase/wrangler.jsonc \
             --secrets-file "$secrets" \
             --var "SUPABASE_URL:$SUPABASE_URL" --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY"

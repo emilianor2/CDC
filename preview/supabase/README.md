@@ -4,7 +4,7 @@ La rama sirve los paneles originales de cliente, dueño y superadmin con un Work
 
 Los paneles comparten un estado de prueba persistente en PostgreSQL. El Worker valida la sesión y usa las reglas del backend de Club de Fans para limitar los datos y las operaciones de cada perfil. La tabla del estado queda reservada al servidor. Las tablas relacionales de la primera prueba se conservan para los tests de políticas de Supabase.
 
-Las cuentas se crean desde el Action. El panel de superadmin puede crear comercios y administrar los accesos de prueba existentes. La creación de nuevas cuentas desde el panel y el envío real de notificaciones están fuera de esta prueba.
+Las cuentas se crean desde el Action. El panel de superadmin puede crear comercios y administrar los accesos de prueba existentes. La creación de nuevas cuentas desde el panel está fuera de esta prueba.
 
 ## Docker local
 
@@ -31,6 +31,11 @@ Usá un proyecto de Supabase dedicado a la prueba, con el proveedor de email hab
 | Secreto del entorno | `SUPABASE_DEMO_PASSWORDS` | JSON con las claves `cliente`, `dueno` y `superadmin`, cada una con una contraseña distinta de 16 caracteres o más |
 | Variable del entorno | `CLOUDFLARE_ACCOUNT_ID` | ID de la cuenta de Cloudflare |
 | Secreto del entorno | `CLOUDFLARE_API_TOKEN` | Token de la cuenta con permiso de edición de Workers |
+| Secreto del entorno | `PREVIEW_VAPID` | JSON generado con `node preview/supabase/generate-vapid.mjs`. Conservá el mismo par de claves para mantener las suscripciones existentes |
 | Variable del repositorio | `ENABLE_SUPABASE_PREVIEW` | `true` para publicar después de verificar |
 
 Con todo configurado, subí un commit a la rama de prueba. El Action verifica login y permisos en Docker, aplica la migración al Supabase de prueba, crea y verifica las tres cuentas y publica `club-de-fans-supabase-preview` en el subdominio `workers.dev` de la cuenta. La publicación requiere que ese subdominio esté habilitado. La URL queda en el log del último paso.
+
+## Avisos en iPhone
+
+En iOS 16.4 o posterior, abrí la vista previa en Safari y elegí Compartir → Agregar a pantalla de inicio. Abrí la app desde el ícono, entrá como cliente y tocá **Activar avisos del comercio** en tu tarjeta. Luego entrá como dueño en otro navegador o dispositivo, abrí **Mensajes**, seleccioná al cliente con avisos activos y enviá el mensaje. El historial muestra el resultado del envío al servicio de notificaciones.

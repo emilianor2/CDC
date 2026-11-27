@@ -30,10 +30,15 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron compilar los paneles de prueba.' }
     $settingsPath = Join-Path $PSScriptRoot '.env.wrangler-local'
     try {
+        $vapid = node preview/supabase/generate-vapid.mjs | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron generar las claves Web Push locales.' }
         @(
             "SUPABASE_URL=$($config.API_URL)"
             "SUPABASE_PUBLISHABLE_KEY=$($config.PUBLISHABLE_KEY)"
             "SUPABASE_ADMIN_KEY=$($config.SECRET_KEY)"
+            "VAPID_PUBLIC_KEY=$($vapid.VAPID_PUBLIC_KEY)"
+            "VAPID_PRIVATE_KEY=$($vapid.VAPID_PRIVATE_KEY)"
+            "VAPID_SUBJECT=https://club-de-fans-supabase-preview.emilianor92.workers.dev"
         ) | Set-Content -LiteralPath $settingsPath
         Write-Host 'Las contraseñas locales están en preview/supabase/.env.demo.json.'
         npx --no-install wrangler dev --config preview/supabase/wrangler.jsonc --ip 127.0.0.1 --port 8787 --inspector-port 0 --env-file $settingsPath

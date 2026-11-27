@@ -101,7 +101,12 @@ export default {
       const backendURL = new URL(url);
       backendURL.searchParams.delete('login');
       backendURL.searchParams.delete('password');
-      return handleAPI(new Request(backendURL, request), { previewStateStore: supabase.stateStore }, null, false, actor);
+      return handleAPI(new Request(backendURL, request), {
+        previewStateStore: supabase.stateStore,
+        VAPID_PUBLIC_KEY: env.VAPID_PUBLIC_KEY,
+        VAPID_PRIVATE_KEY: env.VAPID_PRIVATE_KEY,
+        VAPID_SUBJECT: env.VAPID_SUBJECT,
+      }, null, false, actor);
     } catch {
       if (url.pathname === '/login') return redirect(loginPage('/', 'unavailable'));
       return json({ error: 'No pudimos acceder al entorno de prueba. Intentá nuevamente.' }, 503);
