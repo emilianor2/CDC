@@ -110,7 +110,4 @@ jobs:
         env:
           PREVIEW_BASE_URL: https://club-de-fans-supabase-preview.emilianor92.workers.dev
           SUPABASE_DEMO_PASSWORDS: ${{ secrets.SUPABASE_DEMO_PASSWORDS }}
-        run: |
-          curl --fail --silent --show-error --retry 8 --retry-delay 3 --retry-all-errors \
-            --max-time 10 "$PREVIEW_BASE_URL/" --output /dev/null
-          node preview/supabase/smoke.mjs
+        run: node preview/supabase/smoke.mjs

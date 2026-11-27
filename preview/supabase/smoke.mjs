@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { Script } from 'node:vm';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const base = process.env.PREVIEW_BASE_URL || 'http://127.0.0.1:8787';
 const checkFixtures = process.env.CHECK_DEMO_MUTATION === 'true';
@@ -17,10 +18,16 @@ function request(path, options = {}) {
   return fetch(new URL(path, base), { redirect: 'manual', signal: AbortSignal.timeout(15_000), ...options });
 }
 
-const page = await request('/');
-assert.equal(page.status, 200);
-assert.equal(page.headers.get('referrer-policy'), 'same-origin');
-assert.match(await page.text(), /action="\/login"/);
+async function checkLoginPage() {
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const page = await request('/').catch(() => null);
+    if (page?.ok && page.headers.get('referrer-policy') === 'same-origin'
+        && /action="\/login"/.test(await page.text())) return;
+    await delay(2000);
+  }
+  assert.fail('La versión esperada del formulario todavía no se sirve en Cloudflare.');
+}
+await checkLoginPage();
 assert.equal((await request('/api/state?panel=superadmin', { headers: {
   'oai-authenticated-user-email': 'superadmin@demo.clubdefans.test',
 } })).status, 401);
