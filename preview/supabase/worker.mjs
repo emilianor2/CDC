@@ -41,7 +41,7 @@ async function html(env, request, path) {
   const asset = await env.ASSETS.fetch(new Request(new URL(path, request.url)));
   const headers = new Headers(asset.headers);
   headers.set('cache-control', 'no-store');
-  headers.set('referrer-policy', 'no-referrer');
+  headers.set('referrer-policy', 'same-origin');
   headers.set('x-content-type-options', 'nosniff');
   headers.set('x-robots-tag', 'noindex, nofollow');
   headers.set('content-security-policy', "frame-ancestors 'none'; form-action 'self'; base-uri 'none'");

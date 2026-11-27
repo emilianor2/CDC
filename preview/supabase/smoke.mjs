@@ -19,6 +19,7 @@ function request(path, options = {}) {
 
 const page = await request('/');
 assert.equal(page.status, 200);
+assert.equal(page.headers.get('referrer-policy'), 'same-origin');
 assert.match(await page.text(), /action="\/login"/);
 assert.equal((await request('/api/state?panel=superadmin', { headers: {
   'oai-authenticated-user-email': 'superadmin@demo.clubdefans.test',
@@ -38,7 +39,9 @@ for (const [role, destination, marker, stores, clients] of accounts) {
   const Cookie = setCookie.split(';')[0];
   const view = await request(destination, { headers: { Cookie } });
   assert.equal(view.status, 200);
+  assert.equal(view.headers.get('referrer-policy'), 'same-origin');
   const html = await view.text();
+  assert.doesNotMatch(html, /<meta name="referrer" content="no-referrer">/);
   assert.match(html, new RegExp(marker));
   const script = html.match(/<script>([\s\S]+)<\/script>/);
   assert.ok(script);

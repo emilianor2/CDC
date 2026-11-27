@@ -9,6 +9,7 @@ const [page, styles, ...scripts] = await Promise.all(
 const preview = await readFile(new URL('./preview-ui.js', import.meta.url), 'utf8');
 const login = await readFile(new URL('./login.html', import.meta.url), 'utf8');
 const app = page
+  .replace('<meta name="referrer" content="no-referrer">', '')
   .replace('<style></style>', () => '<style>' + styles + '</style>')
   .replace('<script></script>', () => '<script>' + scripts.concat(preview).join('\n') + '</script>');
 
