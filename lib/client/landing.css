@@ -135,7 +135,6 @@ nav > a:hover { text-decoration: underline; text-underline-offset: .25em; }
 .sections section + section { border-left: 1px solid var(--line); padding-left: clamp(1rem, 4vw, 3rem); }
 .sections h2 { margin: 0 0 .75rem; font-size: clamp(1.65rem, 3.5vw, 2.45rem); letter-spacing: -.055em; }
 .sections p { max-width: 33rem; margin: 0; color: var(--muted); line-height: 1.65; }
-.text-link { display: inline-block; margin-top: .9rem; font-weight: 700; text-underline-offset: .23em; }
 .site-footer { padding-block: 1.5rem; color: var(--muted); font-size: .875rem; font-weight: 650; }
 
 @media (max-width: 48rem) {
