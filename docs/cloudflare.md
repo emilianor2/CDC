@@ -38,5 +38,19 @@ reciba las visitas; no borres registros DNS para publicar.
    Los dueños usan las credenciales que les crea el superadmin.
 
 La base de producción comienza con los datos de ejemplo. Si necesitás migrar
-datos de otra instancia, exportalos e importalos por separado. Para activar
-avisos Web Push, configurá las claves VAPID en los secretos del Worker.
+datos de otra instancia, exportalos e importalos por separado.
+
+## Avisos Web Push
+
+El entorno `production` de GitHub usa el secreto `PRODUCTION_VAPID` con el
+JSON generado por `node scripts/generate-vapid.mjs`. El Action configura el
+par VAPID si el Worker aún no lo tiene. Cuando ya hay un par activo, se
+conserva para que las suscripciones existentes sigan funcionando.
+
+En iPhone, abrí la tarjeta del comercio en Safari antes de agregarla a la
+pantalla de inicio. En iOS 17.2 o posterior, Safari copia la sesión de la
+tarjeta al agregar la app. Abrí la tarjeta desde el ícono y tocá **Activar
+avisos del comercio**. El dueño puede seleccionar las tarjetas con avisos
+activos desde **Mensajes**.
+[Notificaciones en iOS](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
+[Sesiones al agregar una app en iOS](https://webkit.org/blog/14787/webkit-features-in-safari-17-2/).

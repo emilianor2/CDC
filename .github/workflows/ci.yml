@@ -89,11 +89,36 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PRODUCTION_VAPID: ${{ secrets.PRODUCTION_VAPID }}
         run: |
+          set -o pipefail
           : "${CLOUDFLARE_ACCOUNT_ID:?Falta configurar CLOUDFLARE_ACCOUNT_ID}"
           : "${CLOUDFLARE_API_TOKEN:?Falta el secreto CLOUDFLARE_API_TOKEN}"
-          npx --no-install wrangler d1 migrations apply DB --remote --config dist-release/dist/server/wrangler.json
-          npx --no-install wrangler deploy --config dist-release/dist/server/wrangler.json
+          config=dist-release/dist/server/wrangler.json
+          deploy_args=()
+          if [[ -n "$PRODUCTION_VAPID" ]]; then
+            active_bindings() {
+              local version_id
+              version_id="$(npx --no-install wrangler deployments status --config "$config" --json \
+                | jq -er '.versions[] | select(.percentage == 100) | .version_id')"
+              npx --no-install wrangler versions view "$version_id" --config "$config" --json \
+                | jq -ce '[.resources.bindings[].name | select(. == "VAPID_PUBLIC_KEY" or . == "VAPID_PRIVATE_KEY" or . == "VAPID_SUBJECT")]'
+            }
+            umask 077
+            secrets="$(mktemp --suffix=.json)"
+            trap 'rm -f "$secrets"' EXIT
+            bindings="$(active_bindings)"
+            node scripts/production-vapid.mjs "$bindings" "$secrets"
+            if jq -e 'length > 0' "$secrets" >/dev/null; then
+              deploy_args+=(--secrets-file "$secrets")
+            fi
+          fi
+          npx --no-install wrangler d1 migrations apply DB --remote --config "$config"
+          npx --no-install wrangler deploy --config "$config" "${deploy_args[@]}"
+          if [[ -n "$PRODUCTION_VAPID" ]]; then
+            active_bindings | jq -e 'unique | length == 3' >/dev/null
+            echo "El Worker de producción tiene las tres claves de Web Push."
+          fi
       - name: Verificar el sitio publicado
         env:
           SUPERADMIN_TOTP_MODE: ${{ vars.SUPERADMIN_TOTP_MODE }}
